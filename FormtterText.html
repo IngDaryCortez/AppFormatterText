@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Formato de Texto Personalizado</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos generales para la interfaz */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1f2937; /* Dark mode background */
+            color: #f3f4f6;
+        }
+        textarea, select, input[type="text"] {
+            transition: all 0.2s;
+            border: 2px solid #4b5563;
+            background-color: #374151;
+            color: #f3f4f6;
+        }
+        textarea:focus, select:focus, input[type="text"]:focus {
+            border-color: #3b82f6; /* Blue border on focus */
+            outline: none;
+        }
+        .container {
+            max-width: 90%;
+            margin-top: 2rem;
+        }
+        /* Custom scrollbar for textareas */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #4b5563;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="container mx-auto">
+        <h1 class="text-3xl font-extrabold mb-6 text-center text-blue-400">
+            Formateador de Listas
+        </h1>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Columna de Entrada de Datos -->
+            <div class="lg:col-span-1 p-5 bg-gray-800 rounded-xl shadow-2xl">
+                <h2 class="text-xl font-semibold mb-3">1. Datos de Entrada (Separar por comas o saltos de línea)</h2>
+                <textarea id="inputData" rows="10" class="w-full p-3 rounded-lg resize-none custom-scrollbar" placeholder="Ejemplo: 
+manzana,
+pera,
+naranja,
+kiwi"></textarea>
+
+                <!-- Botón de Limpiar Entrada -->
+                <button id="clearInputButton" class="w-full mt-4 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-150">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Limpiar Entrada
+                </button>
+            </div>
+
+            <!-- Columna de Configuración -->
+            <div class="lg:col-span-1 p-5 bg-gray-800 rounded-xl shadow-2xl space-y-5">
+                <h2 class="text-xl font-semibold mb-3">2. Configuración de Formato</h2>
+
+                <!-- Tipo de Formato -->
+                <div>
+                    <label for="formatType" class="block text-sm font-medium mb-1">Tipo de Formato Requerido:</label>
+                    <select id="formatType" class="w-full p-2.5 rounded-lg appearance-none">
+                        <option value="none">(1, 2, 3...)</option>
+                        <option value="single-quote">('1','2','3'...) - Comilla Simple</option>
+                        <option value="double-quote">("1","2","3"...) - Comilla Doble</option>
+                        <option value="custom">Personalizado (Definir abajo)</option>
+                    </select>
+                </div>
+
+                <!-- Orientación -->
+                <div>
+                    <label for="orientation" class="block text-sm font-medium mb-1">Orientación del Resultado:</label>
+                    <select id="orientation" class="w-full p-2.5 rounded-lg appearance-none">
+                        <option value="horizontal">Horizontal (todo en una línea)</option>
+                        <option value="vertical">Vertical (cada elemento en una línea)</option>
+                    </select>
+                </div>
+
+                <!-- Configuración Personalizada (Oculta por defecto) -->
+                <div id="customConfig" class="p-4 bg-gray-700 rounded-lg border border-blue-500 hidden space-y-3">
+                    <h3 class="text-lg font-bold text-blue-300">Formato Personalizado</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="wrapperStart" class="block text-xs mb-1">Envoltura de Inicio:</label>
+                            <input type="text" id="wrapperStart" value="(" class="w-full p-2 rounded-lg text-sm" placeholder="Ej: (">
+                        </div>
+                        <div>
+                            <label for="wrapperEnd" class="block text-xs mb-1">Envoltura de Fin:</label>
+                            <input type="text" id="wrapperEnd" value=")" class="w-full p-2 rounded-lg text-sm" placeholder="Ej: )">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label for="prefix" class="block text-xs mb-1">Prefijo (Antes de cada item):</label>
+                            <input type="text" id="prefix" value="[" class="w-full p-2 rounded-lg text-sm" placeholder="Ej: [ (para [1],[2]...)">
+                        </div>
+                        <div>
+                            <label for="suffix" class="block text-xs mb-1">Sufijo (Después de cada item):</label>
+                            <input type="text" id="suffix" value="]" class="w-full p-2 rounded-lg text-sm" placeholder="Ej: ] (para [1],[2]...)">
+                        </div>
+                        <div>
+                            <label for="separator" class="block text-xs mb-1">Separador de Items:</label>
+                            <input type="text" id="separator" value=", " class="w-full p-2 rounded-lg text-sm" placeholder="Ej: , ">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de Formatear (aunque es automático, se puede forzar) -->
+                <button id="formatButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-150">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    Generar Formato
+                </button>
+            </div>
+
+            <!-- Columna de Resultado -->
+            <div class="lg:col-span-1 p-5 bg-gray-800 rounded-xl shadow-2xl">
+                <h2 class="text-xl font-semibold mb-3">3. Resultado Formateado</h2>
+                <textarea id="outputData" rows="10" readonly class="w-full p-3 rounded-lg resize-none custom-scrollbar" placeholder="El resultado formateado aparecerá aquí..."></textarea>
+                
+                <!-- Botón de Copiar -->
+                <button id="copyButton" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-150 relative">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5h2c2 0 2 0 2 2v3m-4-3v2.5M15 17h.01"></path></svg>
+                    Copiar Formato
+                    <span id="copyMessage" class="absolute top-0 right-0 mt-[-1.5rem] bg-gray-900 text-xs py-1 px-2 rounded hidden transition-opacity duration-300">Copiado!</span>
+                </button>
+
+                <!-- Botón de Quitar Formato -->
+                <button id="removeFormatButton" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-150">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    Quitar Formato y Limpiar
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const inputData = document.getElementById('inputData');
+        const outputData = document.getElementById('outputData');
+        const formatType = document.getElementById('formatType');
+        const orientation = document.getElementById('orientation');
+        const customConfig = document.getElementById('customConfig');
+        const formatButton = document.getElementById('formatButton');
+        const copyButton = document.getElementById('copyButton');
+        const copyMessage = document.getElementById('copyMessage');
+        const removeFormatButton = document.getElementById('removeFormatButton');
+        const clearInputButton = document.getElementById('clearInputButton'); // Nuevo elemento
+
+        // Custom config elements
+        const wrapperStart = document.getElementById('wrapperStart');
+        const wrapperEnd = document.getElementById('wrapperEnd');
+        const prefix = document.getElementById('prefix');
+        const suffix = document.getElementById('suffix');
+        const separator = document.getElementById('separator');
+
+        /**
+         * Limpia el input, lo divide en items y elimina espacios/vacíos.
+         * Es robusto para manejar comas o saltos de línea como separadores.
+         * @param {string} rawText El texto sin formatear.
+         * @returns {string[]} Un array de items limpios.
+         */
+        function cleanAndSplit(rawText) {
+            // Reemplaza comas con saltos de línea y luego divide por saltos de línea
+            const items = rawText
+                .replace(/,\s*/g, '\n') // Normaliza comas a saltos de línea
+                .split('\n')
+                .map(item => item.trim()) // Quita espacios en blanco alrededor
+                .filter(item => item.length > 0); // Filtra strings vacíos
+            return items;
+        }
+
+        /**
+         * Aplica el formato seleccionado a los datos de entrada.
+         */
+        function applyFormat() {
+            const items = cleanAndSplit(inputData.value);
+            const selectedFormat = formatType.value;
+            const selectedOrientation = orientation.value;
+
+            if (items.length === 0) {
+                outputData.value = '';
+                return;
+            }
+
+            let p = '', s = '', ws = '(', we = ')', sep = ', ';
+
+            // 1. Configurar Prefijo y Sufijo (P, S) y Wrappers (WS, WE)
+            if (selectedFormat === 'custom') {
+                // Usar valores de configuración personalizada
+                ws = wrapperStart.value;
+                we = wrapperEnd.value;
+                p = prefix.value; // El prefijo/sufijo para CADA ITEM
+                s = suffix.value;
+                sep = separator.value;
+                
+            } else if (selectedFormat === 'single-quote') {
+                // Formato: ('aaa','bbb'...)
+                p = "'";
+                s = "'";
+                ws = '(';
+                we = ')';
+                sep = ', ';
+            } else if (selectedFormat === 'double-quote') {
+                // Formato: ("aaa","bbb"...)
+                p = '"';
+                s = '"';
+                ws = '(';
+                we = ')';
+                sep = ', ';
+            } else { // selectedFormat === 'none' (o cualquier otro valor por defecto)
+                // Formato: (1, 2, 3...)
+                p = '';
+                s = '';
+                ws = '(';
+                we = ')';
+                sep = ', ';
+            }
+            
+            // 2. Ajustar Separador según Orientación
+            const itemSeparator = selectedOrientation === 'vertical' ? sep + '\n ' : sep;
+
+            // 3. Aplicar formato y unir
+            const formattedItems = items.map(item => p + item + s);
+            
+            // Si es vertical, añadimos un espacio extra después del salto de línea 
+            // para que la lista se vea indentada dentro del wrapper.
+            const content = selectedOrientation === 'vertical' 
+                ? '\n ' + formattedItems.join(itemSeparator) + '\n'
+                : formattedItems.join(itemSeparator);
+
+
+            // 4. Aplicar Envoltura Global
+            outputData.value = ws + content + we;
+        }
+
+        /**
+         * Muestra u oculta la configuración personalizada.
+         */
+        function toggleCustomConfig() {
+            if (formatType.value === 'custom') {
+                customConfig.classList.remove('hidden');
+                // Al cambiar a custom, si los campos están vacíos, usar los valores de ejemplo
+                if (!prefix.value) prefix.value = '[';
+                if (!suffix.value) suffix.value = ']';
+                if (!wrapperStart.value) wrapperStart.value = '(';
+                if (!wrapperEnd.value) wrapperEnd.value = ')';
+                if (!separator.value) separator.value = ', ';
+
+            } else {
+                customConfig.classList.add('hidden');
+            }
+            // Siempre aplicar el formato después de cambiar el tipo, incluso si se oculta el custom
+            applyFormat();
+        }
+        
+        /**
+         * Intenta eliminar el formato del texto de salida y lo limpia.
+         * Luego actualiza la caja de entrada y la de salida al formato base (1,2,3).
+         */
+        function removeFormat() {
+            let formattedText = outputData.value;
+            
+            // 1. Limpieza agresiva: Eliminar corchetes, paréntesis, comillas, etc.
+            let cleanedText = formattedText
+                .replace(/[\[\]\(\)'"]/g, '') // Quita todos los caracteres de envoltura comunes
+                .replace(/,\s*\n\s*/g, ',') // Unifica separadores verticales a coma horizontal
+                .replace(/\n/g, ',') // Convierte cualquier salto de línea restante en coma
+                .trim();
+
+            // 2. Usar cleanAndSplit para normalizar la lista (eliminar comas redundantes y espacios)
+            const rawItems = cleanAndSplit(cleanedText);
+
+            if (rawItems.length === 0) {
+                outputData.value = '';
+                inputData.value = '';
+                return;
+            }
+            
+            // 3. Actualizar el campo de entrada con la lista limpia (vertical para facilitar la edición)
+            inputData.value = rawItems.join(',\n'); 
+
+            // 4. Forzar el formato a 'none' y 'horizontal' para mostrar un resultado limpio (1, 2, 3)
+            formatType.value = 'none';
+            orientation.value = 'horizontal';
+            toggleCustomConfig(); // Ejecuta applyFormat
+
+            // Muestra mensaje de éxito
+            copyMessage.textContent = 'Formato Eliminado y Datos Limpios!';
+            copyMessage.classList.remove('hidden');
+            copyMessage.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                copyMessage.classList.add('hidden');
+                copyMessage.classList.remove('opacity-100');
+                copyMessage.textContent = 'Copiado!'; // Restablecer el mensaje de copia
+            }, 2000);
+        }
+
+        /**
+         * Limpia completamente el campo de entrada y el de salida.
+         */
+        function clearInput() {
+            inputData.value = '';
+            // El evento 'input' en inputData llama automáticamente a applyFormat, limpiando outputData
+            // Pero lo forzamos para asegurar consistencia
+            outputData.value = ''; 
+            
+            // Muestra mensaje de éxito
+            copyMessage.textContent = 'Entrada Limpiada!';
+            copyMessage.classList.remove('hidden');
+            copyMessage.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                copyMessage.classList.add('hidden');
+                copyMessage.classList.remove('opacity-100');
+                copyMessage.textContent = 'Copiado!'; // Restablecer el mensaje de copia
+            }, 2000);
+        }
+
+        /**
+         * Copia el texto del área de resultado al portapapeles.
+         */
+        function copyToClipboard() {
+            outputData.select();
+            outputData.setSelectionRange(0, 99999); // Para dispositivos móviles
+            
+            try {
+                // Usa execCommand ya que navigator.clipboard puede no estar disponible en iframes
+                document.execCommand('copy');
+                
+                // Muestra mensaje de copiado (usa el texto predeterminado)
+                copyMessage.textContent = 'Copiado!';
+                copyMessage.classList.remove('hidden');
+                copyMessage.classList.add('opacity-100');
+                
+                setTimeout(() => {
+                    copyMessage.classList.add('hidden');
+                    copyMessage.classList.remove('opacity-100');
+                }, 1500);
+
+            } catch (err) {
+                console.error('No se pudo copiar el texto:', err);
+            }
+        }
+
+        // --- Event Listeners ---
+        
+        // Ejecutar formato automáticamente cuando cambian los datos o las opciones
+        inputData.addEventListener('input', applyFormat);
+        formatType.addEventListener('change', toggleCustomConfig);
+        orientation.addEventListener('change', applyFormat);
+
+        // Ejecutar formato cuando cambia la configuración personalizada (solo si el tipo es 'custom')
+        document.getElementById('customConfig').addEventListener('input', () => {
+            if (formatType.value === 'custom') {
+                applyFormat();
+            }
+        });
+
+        // Botón de forzar formato
+        formatButton.addEventListener('click', applyFormat);
+
+        // Botón de copiado
+        copyButton.addEventListener('click', copyToClipboard);
+
+        // Botón de quitar formato
+        removeFormatButton.addEventListener('click', removeFormat);
+
+        // Nuevo: Botón de Limpiar Entrada
+        clearInputButton.addEventListener('click', clearInput);
+
+        // Ejecutar el formato inicial al cargar la página
+        window.onload = () => {
+            applyFormat();
+        };
+
+    </script>
+</body>
+</html>
