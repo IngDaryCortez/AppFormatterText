@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Formato de Texto Personalizado</title>
-    <!-- Icono de Pestaña: archivo `favicon.svg` en la carpeta del proyecto -->
-    <link rel="icon" type="image/svg+xml" href="favicon.ico">
     <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -43,20 +41,19 @@
 
     <div class="container mx-auto">
         <h1 class="text-3xl font-extrabold mb-6 text-center text-blue-400">
-           Generador de Formato de Texto Personalizado
+            Formateador de Listas
         </h1>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <!-- Columna de Entrada de Datos -->
             <div class="lg:col-span-1 p-5 bg-gray-800 rounded-xl shadow-2xl">
-                <h2 class="text-xl font-semibold mb-3">1. Datos de Entrada (Separar por comas o saltos de línea)</h2>
+                <h2 class="text-xl font-semibold mb-3">1. Datos de Entrada (Separar por comas, tabs o saltos)</h2>
                 <textarea id="inputData" rows="10" class="w-full p-3 rounded-lg resize-none custom-scrollbar" placeholder="Ejemplo: 
 manzana,
 pera,
 naranja,
-kiwi
-etc..."></textarea>
+kiwi"></textarea>
 
                 <!-- Botón de Limpiar Entrada -->
                 <button id="clearInputButton" class="w-full mt-4 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-150">
@@ -157,7 +154,7 @@ etc..."></textarea>
         const copyButton = document.getElementById('copyButton');
         const copyMessage = document.getElementById('copyMessage');
         const removeFormatButton = document.getElementById('removeFormatButton');
-        const clearInputButton = document.getElementById('clearInputButton'); // Nuevo elemento
+        const clearInputButton = document.getElementById('clearInputButton');
 
         // Custom config elements
         const wrapperStart = document.getElementById('wrapperStart');
@@ -167,17 +164,18 @@ etc..."></textarea>
         const separator = document.getElementById('separator');
 
         /**
-         * Limpia el input, lo divide en items y elimina espacios/vacíos.
-         * Es robusto para manejar comas o saltos de línea como separadores.
+         * Limpia el input, lo divide en items y elimina espacios/vacíos/tabulaciones.
+         * AHORA SOPORTA TABULACIONES (\t) para datos copiados de Excel/SQL.
          * @param {string} rawText El texto sin formatear.
          * @returns {string[]} Un array de items limpios.
          */
         function cleanAndSplit(rawText) {
-            // Reemplaza comas con saltos de línea y luego divide por saltos de línea
             const items = rawText
-                .replace(/,\s*/g, '\n') // Normaliza comas a saltos de línea
+                .replace(/\t/g, '\n')       // Reemplaza tabulaciones con saltos de línea (CLAVE para tu caso)
+                .replace(/ {2,}/g, '\n')    // Reemplaza 2 o más espacios seguidos con saltos de línea
+                .replace(/,\s*/g, '\n')     // Reemplaza comas con saltos de línea
                 .split('\n')
-                .map(item => item.trim()) // Quita espacios en blanco alrededor
+                .map(item => item.trim())   // Quita espacios en blanco alrededor
                 .filter(item => item.length > 0); // Filtra strings vacíos
             return items;
         }
@@ -197,31 +195,26 @@ etc..."></textarea>
 
             let p = '', s = '', ws = '(', we = ')', sep = ', ';
 
-            // 1. Configurar Prefijo y Sufijo (P, S) y Wrappers (WS, WE)
             if (selectedFormat === 'custom') {
-                // Usar valores de configuración personalizada
                 ws = wrapperStart.value;
                 we = wrapperEnd.value;
-                p = prefix.value; // El prefijo/sufijo para CADA ITEM
+                p = prefix.value;
                 s = suffix.value;
                 sep = separator.value;
                 
             } else if (selectedFormat === 'single-quote') {
-                // Formato: ('aaa','bbb'...)
                 p = "'";
                 s = "'";
                 ws = '(';
                 we = ')';
                 sep = ', ';
             } else if (selectedFormat === 'double-quote') {
-                // Formato: ("aaa","bbb"...)
                 p = '"';
                 s = '"';
                 ws = '(';
                 we = ')';
                 sep = ', ';
-            } else { // selectedFormat === 'none' (o cualquier otro valor por defecto)
-                // Formato: (1, 2, 3...)
+            } else { 
                 p = '';
                 s = '';
                 ws = '(';
@@ -229,58 +222,51 @@ etc..."></textarea>
                 sep = ', ';
             }
             
-            // 2. Ajustar Separador según Orientación
             const itemSeparator = selectedOrientation === 'vertical' ? sep + '\n ' : sep;
-
-            // 3. Aplicar formato y unir
             const formattedItems = items.map(item => p + item + s);
             
-            // Si es vertical, añadimos un espacio extra después del salto de línea 
-            // para que la lista se vea indentada dentro del wrapper.
             const content = selectedOrientation === 'vertical' 
                 ? '\n ' + formattedItems.join(itemSeparator) + '\n'
                 : formattedItems.join(itemSeparator);
 
-
-            // 4. Aplicar Envoltura Global
             outputData.value = ws + content + we;
         }
 
-        /**
-         * Muestra u oculta la configuración personalizada.
-         */
         function toggleCustomConfig() {
             if (formatType.value === 'custom') {
                 customConfig.classList.remove('hidden');
-                // Al cambiar a custom, si los campos están vacíos, usar los valores de ejemplo
                 if (!prefix.value) prefix.value = '[';
                 if (!suffix.value) suffix.value = ']';
                 if (!wrapperStart.value) wrapperStart.value = '(';
                 if (!wrapperEnd.value) wrapperEnd.value = ')';
                 if (!separator.value) separator.value = ', ';
-
             } else {
                 customConfig.classList.add('hidden');
             }
-            // Siempre aplicar el formato después de cambiar el tipo, incluso si se oculta el custom
             applyFormat();
         }
         
         /**
-         * Intenta eliminar el formato del texto de salida y lo limpia.
-         * Luego actualiza la caja de entrada y la de salida al formato base (1,2,3).
+         * Limpia el formato y actualiza la caja de ENTRADA con los datos limpios y en lista vertical.
          */
         function removeFormat() {
-            let formattedText = outputData.value;
+            // Intentamos limpiar primero desde el output, pero si el input tiene tabs,
+            // cleanAndSplit ya hará el trabajo sucio sobre el input actual también.
             
-            // 1. Limpieza agresiva: Eliminar corchetes, paréntesis, comillas, etc.
-            let cleanedText = formattedText
-                .replace(/[\[\]\(\)'"]/g, '') // Quita todos los caracteres de envoltura comunes
-                .replace(/,\s*\n\s*/g, ',') // Unifica separadores verticales a coma horizontal
-                .replace(/\n/g, ',') // Convierte cualquier salto de línea restante en coma
+            // 1. Tomamos lo que hay en Input directamente para asegurar que limpiamos los tabs del paste original
+            let textToClean = inputData.value;
+            
+            // Si input está vacío, intentamos limpiar output (por si acaso)
+            if (!textToClean.trim()) {
+                textToClean = outputData.value;
+            }
+            
+            // 2. Limpieza agresiva de caracteres de formato
+            let cleanedText = textToClean
+                .replace(/[\[\]\(\)'"]/g, '') // Quita envoltorios
                 .trim();
 
-            // 2. Usar cleanAndSplit para normalizar la lista (eliminar comas redundantes y espacios)
+            // 3. Usar cleanAndSplit (ahora mejorado con soporte de TABs)
             const rawItems = cleanAndSplit(cleanedText);
 
             if (rawItems.length === 0) {
@@ -289,104 +275,68 @@ etc..."></textarea>
                 return;
             }
             
-            // 3. Actualizar el campo de entrada con la lista limpia (vertical para facilitar la edición)
-            inputData.value = rawItems.join(',\n'); 
+            // 4. Actualizar la CAJA DE ENTRADA con una lista vertical limpia
+            // Esto es lo que pediste: que arregle el cuadro "Datos entrada"
+            inputData.value = rawItems.join('\n'); 
 
-            // 4. Forzar el formato a 'none' y 'horizontal' para mostrar un resultado limpio (1, 2, 3)
+            // 5. Restablecer formato a 'none' para ver el resultado limpio en output también
             formatType.value = 'none';
             orientation.value = 'horizontal';
             toggleCustomConfig(); // Ejecuta applyFormat
 
-            // Muestra mensaje de éxito
-            copyMessage.textContent = 'Formato Eliminado y Datos Limpios!';
+            copyMessage.textContent = 'Datos Limpiados y Ordenados!';
             copyMessage.classList.remove('hidden');
             copyMessage.classList.add('opacity-100');
             
             setTimeout(() => {
                 copyMessage.classList.add('hidden');
                 copyMessage.classList.remove('opacity-100');
-                copyMessage.textContent = 'Copiado!'; // Restablecer el mensaje de copia
+                copyMessage.textContent = 'Copiado!';
             }, 2000);
         }
 
-        /**
-         * Limpia completamente el campo de entrada y el de salida.
-         */
         function clearInput() {
             inputData.value = '';
-            // El evento 'input' en inputData llama automáticamente a applyFormat, limpiando outputData
-            // Pero lo forzamos para asegurar consistencia
             outputData.value = ''; 
-            
-            // Muestra mensaje de éxito
             copyMessage.textContent = 'Entrada Limpiada!';
             copyMessage.classList.remove('hidden');
             copyMessage.classList.add('opacity-100');
-            
             setTimeout(() => {
                 copyMessage.classList.add('hidden');
                 copyMessage.classList.remove('opacity-100');
-                copyMessage.textContent = 'Copiado!'; // Restablecer el mensaje de copia
+                copyMessage.textContent = 'Copiado!';
             }, 2000);
         }
 
-        /**
-         * Copia el texto del área de resultado al portapapeles.
-         */
         function copyToClipboard() {
             outputData.select();
-            outputData.setSelectionRange(0, 99999); // Para dispositivos móviles
-            
+            outputData.setSelectionRange(0, 99999); 
             try {
-                // Usa execCommand ya que navigator.clipboard puede no estar disponible en iframes
                 document.execCommand('copy');
-                
-                // Muestra mensaje de copiado (usa el texto predeterminado)
                 copyMessage.textContent = 'Copiado!';
                 copyMessage.classList.remove('hidden');
                 copyMessage.classList.add('opacity-100');
-                
                 setTimeout(() => {
                     copyMessage.classList.add('hidden');
                     copyMessage.classList.remove('opacity-100');
                 }, 1500);
-
             } catch (err) {
                 console.error('No se pudo copiar el texto:', err);
             }
         }
 
         // --- Event Listeners ---
-        
-        // Ejecutar formato automáticamente cuando cambian los datos o las opciones
         inputData.addEventListener('input', applyFormat);
         formatType.addEventListener('change', toggleCustomConfig);
         orientation.addEventListener('change', applyFormat);
-
-        // Ejecutar formato cuando cambia la configuración personalizada (solo si el tipo es 'custom')
         document.getElementById('customConfig').addEventListener('input', () => {
-            if (formatType.value === 'custom') {
-                applyFormat();
-            }
+            if (formatType.value === 'custom') applyFormat();
         });
-
-        // Botón de forzar formato
         formatButton.addEventListener('click', applyFormat);
-
-        // Botón de copiado
         copyButton.addEventListener('click', copyToClipboard);
-
-        // Botón de quitar formato
         removeFormatButton.addEventListener('click', removeFormat);
-
-        // Nuevo: Botón de Limpiar Entrada
         clearInputButton.addEventListener('click', clearInput);
-
-        // Ejecutar el formato inicial al cargar la página
-        window.onload = () => {
-            applyFormat();
-        };
-
+        window.onload = () => { applyFormat(); };
     </script>
 </body>
 </html>
